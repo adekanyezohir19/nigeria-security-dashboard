@@ -1,62 +1,92 @@
-<script>
-let map = L.map('map').setView([9.0765, 7.3986], 13);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: 'OpenStreetMap'
-}).addTo(map);
-
-let userLocation;
-let routingControl;
-
-// Speak function
-function speak(text) {
-  let msg = new SpeechSynthesisUtterance(text);
-  msg.lang = "en-US";
-  msg.rate = 1;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(msg);
-}
-
-// Get user location
-map.locate({ setView: true, maxZoom: 16 });
-
-map.on('locationfound', function(e) {
-  userLocation = e.latlng;
-  L.marker(userLocation)
-    .addTo(map)
-    .bindPopup("Your Location")
-    .openPopup();
-
-  speak("Location detected. Tap on the map to select your destination.");
-});
-
-// Click destination
-map.on('click', function(e) {
-  if (!userLocation) {
-    speak("Waiting for your location.");
-    return;
-  }
-
-  if (routingControl) {
-    map.removeControl(routingControl);
-  }
-
-  routingControl = L.Routing.control({
-    waypoints: [
-      L.latLng(userLocation.lat, userLocation.lng),
-      L.latLng(e.latlng.lat, e.latlng.lng)
-    ],
-    routeWhileDragging: false,
-    show: true
-  }).addTo(map);
-
-  routingControl.on('routesfound', function(e) {
-    const steps = e.routes[0].instructions;
-
-    if (steps.length > 0) {
-      let firstInstruction = steps[0].text;
-      speak(firstInstruction);
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Military Mapping Prototype</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    #map {
+      height: 100vh;
+      width: 100%;
     }
-  });
-});
-</script>
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script>
+    let map;
+    let directionsService;
+    let directionsRenderer;
+
+    function initMap() {
+      // Center the map on Nigeria
+      const nigeria = { lat: 9.0820, lng: 8.6753 };
+
+      map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 6,
+        center: nigeria,
+        mapTypeId: 'satellite' // Satellite view
+      });
+
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({ map: map });
+
+      // Add your name as a marker
+      const yourMarker = new google.maps.Marker({
+        position: nigeria,
+        map: map,
+        title: "Abdulzohir Adekanye"
+      });
+
+      const infoWindow = new google.maps.InfoWindow({
+        content: "<h3>Abdulzohir Adekanye</h3><p>My app location</p>"
+      });
+
+      yourMarker.addListener("click", () => {
+        infoWindow.open(map, yourMarker);
+        getDirections(nigeria); // Get directions from your current location
+      });
+    }
+
+    // Function to get directions
+    function getDirections(destination) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const currentLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+
+          const request = {
+            origin: currentLocation,
+            destination: destination,
+            travelMode: 'DRIVING'
+          };
+
+          directionsService.route(request, (result, status) => {
+            if (status == 'OK') {
+              directionsRenderer.setDirections(result);
+
+              // Speak directions
+              const steps = result.routes[0].legs[0].steps;
+              const speech = new SpeechSynthesisUtterance();
+              let text = "";
+              steps.forEach(step => {
+                text += step.instructions.replace(/<[^>]*>/g, "") + ". ";
+              });
+              speech.text = text;
+              window.speechSynthesis.speak(speech);
+            }
+          });
+        });
+      } else {
+        alert("Geolocation not supported by your browser.");
+      }
+    }
+  </script>
+
+  <script async
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap">
+  </script>
+</body>
+</html>

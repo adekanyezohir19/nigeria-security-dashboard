@@ -1,92 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Free Military Map Prototype</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 100vh; width: 100%; }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-let map = L.map('map').setView([9.0765, 7.3986], 13);
+  const map = L.map('map').setView([9.0820, 8.6753], 6); // Center Nigeria
 
-// Map with names
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: 'OpenStreetMap'
-}).addTo(map);
-
-// Text-to-speech
-function speak(text) {
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = "en-US";
-  speechSynthesis.cancel();
-  speechSynthesis.speak(msg);
-}
-
-let userLocation;
-let routingControl;
-
-// ⚠️ MANUAL DANGER ZONES (DEMO DATA)
-const dangerZones = [
-  {
-    name: "High Risk Area – Demo",
-    lat: 9.0800,
-    lng: 7.4100,
-    radius: 500
-  },
-  {
-    name: "Restricted Zone – Demo",
-    lat: 9.0700,
-    lng: 7.3950,
-    radius: 400
-  }
-];
-
-// Draw danger zones
-dangerZones.forEach(zone => {
-  L.circle([zone.lat, zone.lng], {
-    radius: zone.radius,
-    color: "red",
-    fillColor: "#ff0000",
-    fillOpacity: 0.3
-  }).addTo(map).bindPopup(`⚠️ ${zone.name}`);
-});
-
-// Get user location
-map.locate({ watch: true, setView: true, maxZoom: 16 });
-
-map.on('locationfound', function(e) {
-  userLocation = e.latlng;
-
-  L.marker(userLocation)
-    .addTo(map)
-    .bindPopup("Your Location")
-    .openPopup();
-
-  // Check distance to danger zones
-  dangerZones.forEach(zone => {
-    const distance = map.distance(
-      userLocation,
-      L.latLng(zone.lat, zone.lng)
-    );
-
-    if (distance < zone.radius) {
-      speak(`Warning. You are approaching ${zone.name}`);
-    }
-  });
-});
-
-// Click map to navigate
-map.on('click', function(e) {
-  if (!userLocation) {
-    speak("Waiting for your location.");
-    return;
-  }
-
-  if (routingControl) {
-    map.removeControl(routingControl);
-  }
-
-  routingControl = L.Routing.control({
-    waypoints: [
-      L.latLng(userLocation.lat, userLocation.lng),
-      L.latLng(e.latlng.lat, e.latlng.lng)
-    ],
-    routeWhileDragging: false,
-    show: true
+  // Add free satellite tiles (Esri)
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles © Esri'
   }).addTo(map);
 
-  speak("Route calculated. Follow the instructions.");
-});
+  // Marker for your name
+  const myMarker = L.marker([9.0820, 8.6753]).addTo(map);
+  myMarker.bindPopup("<b>Abdulzohir Adekanye</b><br>My location").openPopup();
+
+  // Simulated dangerous locations
+  const dangerLocations = [
+    {lat: 11.5, lng: 8.5, name: "Danger Zone 1"},
+    {lat: 10.3, lng: 7.8, name: "Danger Zone 2"}
+  ];
+
+  dangerLocations.forEach(loc => {
+    const marker = L.marker([loc.lat, loc.lng], {
+      icon: L.icon({
+        iconUrl: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+        iconSize: [32,32]
+      })
+    }).addTo(map);
+
+    marker.bindPopup(`<b>${loc.name}</b><br>Simulated danger area`);
+    marker.on('click', () => getDirections([loc.lat, loc.lng]));
+  });
+
+  // Function to get directions using OpenRouteService
+  async function getDirections(destination) {
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported by your browser");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async position => {
+      const origin = [position.coords.longitude, position.coords.latitude];
+      const dest = [destination[1], destination[0]]; // lon, lat
+
+      // Your OpenRouteService API key
+      const apiKey = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjRkZGIzNDAyNTIyZTQ4MjU4ZTA3ODI1NTgyODljYWVjIiwiaCI6Im11cm11cjY0In0=";
+
+      const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${origin.join(',')}&end=${dest.join(',')}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const coords = data.features[0].geometry.coordinates.map(c => [c[1], c[0]]); // lat,lng
+        const route = L.polyline(coords, {color: 'blue'}).addTo(map);
+
+        // Speak directions
+        const steps = data.features[0].properties.segments[0].steps;
+        let text = steps.map(s => s.instruction).join('. ');
+        const speech = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(speech);
+      } catch(err) {
+        alert("Error fetching directions: " + err.message);
+      }
+    }, err => alert(err.message));
+  }
 </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nigeria Security Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet Map CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b0f1a;
+      color: white;
+    }
+
+    header {
+      padding: 12px;
+      text-align: center;
+      background: #111827;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    #map {
+      height: 90vh;
+      width: 100%;
+    }
+
+    .popup-img {
+      width: 100%;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  Nigeria Security Dashboard (Prototype)
+</header>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  // Initialize map centered on Nigeria
+  const map = L.map('map').setView([9.0820, 8.6753], 6);
+
+  // Map tiles (satellite-style look)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Simulated security data (DEMO ONLY)
+  const securityPoints = [
+    {
+      name: "Suspicious Activity - Borno",
+      coords: [11.8333, 13.1500],
+      image: "https://upload.wikimedia.org/wikipedia/commons/6/6e/Nigeria_map.png",
+      description: "Simulated alert. No live data."
+    },
+    {
+      name: "Monitoring Zone - Zamfara",
+      coords: [12.1700, 6.6600],
+      image: "https://upload.wikimedia.org/wikipedia/commons/3/3d/Satellite_image_placeholder.png",
+      description: "Prototype monitoring point."
+    }
+  ];
+
+  // Add markers
+  securityPoints.forEach(point => {
+    L.marker(point.coords).addTo(map)
+      .bindPopup(`
+        <strong>${point.name}</strong><br><br>
+        <img src="${point.image}" class="popup-img"><br><br>
+        ${point.description}
+      `);
+  });
+</script>
+
+</body>
+</html>

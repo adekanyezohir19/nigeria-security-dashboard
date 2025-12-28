@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
   <style>
     #map { height: 100vh; width: 100%; }
+    .popup-img { width: 150px; height: 100px; object-fit: cover; display:block; margin-bottom:5px; }
   </style>
 </head>
 <body>
@@ -16,9 +17,9 @@
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 <script>
   // Nigeria bounds
-  const nigeriaBounds = [[4.3, 2.7], [13.9, 14.7]]; // SW, NE lat,lng
+  const nigeriaBounds = [[4.3, 2.7], [13.9, 14.7]];
 
-  // Initialize map centered on Nigeria
+  // Initialize map
   const map = L.map('map', {
     maxBounds: nigeriaBounds,
     maxBoundsViscosity: 1.0
@@ -32,12 +33,22 @@
   // Your name marker
   const myMarker = L.marker([9.0820, 8.6753]).addTo(map);
   myMarker.bindPopup("<b>Abdulzohir Adekanye</b><br>My location").openPopup();
-  myMarker.bindTooltip("Abdulzohir Adekanye", {permanent: true, direction: 'top', offset: [0, -10]});
+  myMarker.bindTooltip("Abdulzohir Adekanye", {permanent:true, direction:'top', offset:[0,-10]});
 
-  // Simulated danger zones
+  // Danger zones with house images and addresses
   const dangerZones = [
-    {lat: 11.5, lng: 8.5, name: "Danger Zone 1"},
-    {lat: 10.3, lng: 7.8, name: "Danger Zone 2"}
+    {
+      lat: 11.5, lng: 8.5,
+      name: "Danger Zone 1",
+      address: "123 Abuja Road, Nigeria",
+      img: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/House_in_Lagos%2C_Nigeria.jpg/320px-House_in_Lagos%2C_Nigeria.jpg"
+    },
+    {
+      lat: 10.3, lng: 7.8,
+      name: "Danger Zone 2",
+      address: "45 Kaduna Street, Nigeria",
+      img: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Nigerian_house.jpg/320px-Nigerian_house.jpg"
+    }
   ];
 
   dangerZones.forEach(zone => {
@@ -47,23 +58,32 @@
         iconSize: [32,32]
       })
     }).addTo(map);
-    marker.bindPopup(`<b>${zone.name}</b><br>Simulated danger area`);
-    marker.bindTooltip(zone.name, {permanent: true, direction: 'top', offset: [0, -10]});
+
+    // Popup with house image, name, and address
+    marker.bindPopup(`
+      <img src="${zone.img}" class="popup-img">
+      <b>${zone.name}</b><br>
+      Address: ${zone.address}<br>
+      Simulated danger area
+    `);
+
+    // Permanent tooltip with name
+    marker.bindTooltip(zone.name, {permanent:true, direction:'top', offset:[0,-10]});
 
     marker.on('click', () => {
-      // Directions from your location to danger zone
+      // Draw route from your location to the danger zone
       L.Routing.control({
         waypoints: [
           L.latLng(9.0820, 8.6753), // your location
           L.latLng(zone.lat, zone.lng)
         ],
         routeWhileDragging: false,
-        show: false
+        show: false,
+        addWaypoints: false
       }).addTo(map);
 
       // Speak directions
-      const text = `Routing from Abdulzohir Adekanye to ${zone.name}`;
-      const speech = new SpeechSynthesisUtterance(text);
+      const speech = new SpeechSynthesisUtterance(`Routing from Abdulzohir Adekanye to ${zone.name}, ${zone.address}`);
       window.speechSynthesis.speak(speech);
     });
   });

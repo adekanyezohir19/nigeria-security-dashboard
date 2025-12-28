@@ -1,92 +1,92 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Military Mapping Prototype</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    #map {
-      height: 100vh;
-      width: 100%;
+<script>
+let map = L.map('map').setView([9.0765, 7.3986], 13);
+
+// Map with names
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: 'OpenStreetMap'
+}).addTo(map);
+
+// Text-to-speech
+function speak(text) {
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "en-US";
+  speechSynthesis.cancel();
+  speechSynthesis.speak(msg);
+}
+
+let userLocation;
+let routingControl;
+
+// ⚠️ MANUAL DANGER ZONES (DEMO DATA)
+const dangerZones = [
+  {
+    name: "High Risk Area – Demo",
+    lat: 9.0800,
+    lng: 7.4100,
+    radius: 500
+  },
+  {
+    name: "Restricted Zone – Demo",
+    lat: 9.0700,
+    lng: 7.3950,
+    radius: 400
+  }
+];
+
+// Draw danger zones
+dangerZones.forEach(zone => {
+  L.circle([zone.lat, zone.lng], {
+    radius: zone.radius,
+    color: "red",
+    fillColor: "#ff0000",
+    fillOpacity: 0.3
+  }).addTo(map).bindPopup(`⚠️ ${zone.name}`);
+});
+
+// Get user location
+map.locate({ watch: true, setView: true, maxZoom: 16 });
+
+map.on('locationfound', function(e) {
+  userLocation = e.latlng;
+
+  L.marker(userLocation)
+    .addTo(map)
+    .bindPopup("Your Location")
+    .openPopup();
+
+  // Check distance to danger zones
+  dangerZones.forEach(zone => {
+    const distance = map.distance(
+      userLocation,
+      L.latLng(zone.lat, zone.lng)
+    );
+
+    if (distance < zone.radius) {
+      speak(`Warning. You are approaching ${zone.name}`);
     }
-  </style>
-</head>
-<body>
-  <div id="map"></div>
+  });
+});
 
-  <script>
-    let map;
-    let directionsService;
-    let directionsRenderer;
+// Click map to navigate
+map.on('click', function(e) {
+  if (!userLocation) {
+    speak("Waiting for your location.");
+    return;
+  }
 
-    function initMap() {
-      // Center the map on Nigeria
-      const nigeria = { lat: 9.0820, lng: 8.6753 };
+  if (routingControl) {
+    map.removeControl(routingControl);
+  }
 
-      map = new google.maps.Map(document.getElementById("map"), {
-        zoom: 6,
-        center: nigeria,
-        mapTypeId: 'satellite' // Satellite view
-      });
+  routingControl = L.Routing.control({
+    waypoints: [
+      L.latLng(userLocation.lat, userLocation.lng),
+      L.latLng(e.latlng.lat, e.latlng.lng)
+    ],
+    routeWhileDragging: false,
+    show: true
+  }).addTo(map);
 
-      directionsService = new google.maps.DirectionsService();
-      directionsRenderer = new google.maps.DirectionsRenderer({ map: map });
-
-      // Add your name as a marker
-      const yourMarker = new google.maps.Marker({
-        position: nigeria,
-        map: map,
-        title: "Abdulzohir Adekanye"
-      });
-
-      const infoWindow = new google.maps.InfoWindow({
-        content: "<h3>Abdulzohir Adekanye</h3><p>My app location</p>"
-      });
-
-      yourMarker.addListener("click", () => {
-        infoWindow.open(map, yourMarker);
-        getDirections(nigeria); // Get directions from your current location
-      });
-    }
-
-    // Function to get directions
-    function getDirections(destination) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-          const currentLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-
-          const request = {
-            origin: currentLocation,
-            destination: destination,
-            travelMode: 'DRIVING'
-          };
-
-          directionsService.route(request, (result, status) => {
-            if (status == 'OK') {
-              directionsRenderer.setDirections(result);
-
-              // Speak directions
-              const steps = result.routes[0].legs[0].steps;
-              const speech = new SpeechSynthesisUtterance();
-              let text = "";
-              steps.forEach(step => {
-                text += step.instructions.replace(/<[^>]*>/g, "") + ". ";
-              });
-              speech.text = text;
-              window.speechSynthesis.speak(speech);
-            }
-          });
-        });
-      } else {
-        alert("Geolocation not supported by your browser.");
-      }
-    }
-  </script>
-
-  <script async
-    src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap">
-  </script>
-</body>
-</html>
+  speak("Route calculated. Follow the instructions.");
+});
+</script>

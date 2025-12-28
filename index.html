@@ -1,82 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Nigeria Security Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
-  <!-- Routing -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
-
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0b0f14;
-      color: white;
-    }
-
-    header {
-      background: #111827;
-      padding: 14px;
-      text-align: center;
-      border-bottom: 2px solid #1f2937;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 18px;
-    }
-
-    header p {
-      margin: 4px 0 0;
-      font-size: 12px;
-      color: #9ca3af;
-    }
-
-    #map {
-      height: calc(100vh - 80px);
-    }
-  </style>
-</head>
-
-<body>
-
-<header>
-  <h1>Nigeria Security Dashboard (Prototype)</h1>
-  <p>Developed by Adekanye Abdulzohir</p>
-</header>
-
-<div id="map"></div>
-
-<!-- Scripts -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-
 <script>
-  // Initialize map (Abuja)
-  const map = L.map('map').setView([9.0765, 7.3986], 15);
+let map = L.map('map').setView([9.0765, 7.3986], 13);
 
-  // Satellite imagery (shows houses clearly)
-  L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    {
-      attribution: 'Esri World Imagery'
-    }
-  ).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: 'OpenStreetMap'
+}).addTo(map);
 
-  // Directions (routing)
-  L.Routing.control({
+let userLocation;
+let routingControl;
+
+// Speak function
+function speak(text) {
+  let msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "en-US";
+  msg.rate = 1;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(msg);
+}
+
+// Get user location
+map.locate({ setView: true, maxZoom: 16 });
+
+map.on('locationfound', function(e) {
+  userLocation = e.latlng;
+  L.marker(userLocation)
+    .addTo(map)
+    .bindPopup("Your Location")
+    .openPopup();
+
+  speak("Location detected. Tap on the map to select your destination.");
+});
+
+// Click destination
+map.on('click', function(e) {
+  if (!userLocation) {
+    speak("Waiting for your location.");
+    return;
+  }
+
+  if (routingControl) {
+    map.removeControl(routingControl);
+  }
+
+  routingControl = L.Routing.control({
     waypoints: [
-      L.latLng(9.0765, 7.3986), // Start
-      L.latLng(9.0820, 7.4200)  // Destination
+      L.latLng(userLocation.lat, userLocation.lng),
+      L.latLng(e.latlng.lat, e.latlng.lng)
     ],
-    routeWhileDragging: true
+    routeWhileDragging: false,
+    show: true
   }).addTo(map);
-</script>
 
-</body>
-</html>
+  routingControl.on('routesfound', function(e) {
+    const steps = e.routes[0].instructions;
+
+    if (steps.length > 0) {
+      let firstInstruction = steps[0].text;
+      speak(firstInstruction);
+    }
+  });
+});
+</script>

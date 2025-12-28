@@ -1,93 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Nigeria Security Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Leaflet Map CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
 
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #0b0f1a;
-      color: white;
+      background-color: #0b0f14;
+      color: #ffffff;
     }
 
     header {
-      padding: 12px;
+      background-color: #111827;
+      padding: 16px;
       text-align: center;
+      border-bottom: 2px solid #1f2937;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    header p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    main {
+      padding: 20px;
+      text-align: center;
+    }
+
+    .box {
       background: #111827;
-      font-weight: bold;
-      letter-spacing: 1px;
-    }
-
-    #map {
-      height: 90vh;
-      width: 100%;
-    }
-
-    .popup-img {
-      width: 100%;
-      border-radius: 6px;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 20px;
+      border: 1px solid #1f2937;
     }
   </style>
 </head>
+
 <body>
 
-<header>
-  <div>Nigeria Security Dashboard </div>
-  <small style="font-size: 12px; color: #9ca3af;">
-    Developed by Adekanye Abdulzohir
-  </small>
-</header>
-</header>
+  <header>
+    <h1>Nigeria Security Dashboard (Prototype)</h1>
+    <p>Developed by Adekanye Abdulzohir</p>
+  </header>
 
-<div id="map"></div>
-
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
-  // Initialize map centered on Nigeria
-  const map = L.map('map').setView([9.0820, 8.6753], 6);
-
-  // Map tiles (satellite-style look)
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-
-  // Simulated security data (DEMO ONLY)
-  const securityPoints = [
-    {
-      name: "Suspicious Activity - Borno",
-      coords: [11.8333, 13.1500],
-      image: "https://upload.wikimedia.org/wikipedia/commons/6/6e/Nigeria_map.png",
-      description: "Simulated alert. No live data."
-    },
-    {
-      name: "Monitoring Zone - Zamfara",
-      coords: [12.1700, 6.6600],
-      image: "https://upload.wikimedia.org/wikipedia/commons/3/3d/Satellite_image_placeholder.png",
-      description: "Prototype monitoring point."
-    }
-  ];
-
-  // Add markers
-  securityPoints.forEach(point => {
-    L.marker(point.coords).addTo(map)
-      .bindPopup(`
-        <strong>${point.name}</strong><br><br>
-        <img src="${point.image}" class="popup-img"><br><br>
-        ${point.description}
-      `);
-  });
-</script>
+  <main>
+    <div class="box">
+      <h3>System Status</h3>
+      <p>Map and intelligence feed will appear here.</p>
+      <p><em>Demo data only – real satellite access requires authorization.</em></p>
+    </div>
+  </main>
 
 </body>
 </html>

@@ -25,9 +25,9 @@
     maxBoundsViscosity: 1.0
   }).setView([9.0820, 8.6753], 6);
 
-  // Satellite tiles
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles © Esri'
+  // Normal map tiles (OpenStreetMap)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
   }).addTo(map);
 
   // Your name marker

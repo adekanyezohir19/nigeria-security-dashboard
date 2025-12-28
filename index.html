@@ -5,24 +5,30 @@
   <title>Nigeria Security Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
       background-color: #0b0f14;
-      color: #ffffff;
+      color: white;
     }
 
     header {
-      background-color: #111827;
-      padding: 16px;
+      background: #111827;
+      padding: 14px;
       text-align: center;
       border-bottom: 2px solid #1f2937;
     }
 
     header h1 {
       margin: 0;
-      font-size: 20px;
+      font-size: 18px;
     }
 
     header p {
@@ -31,35 +37,52 @@
       color: #9ca3af;
     }
 
-    main {
-      padding: 20px;
-      text-align: center;
+    #map {
+      height: calc(100vh - 80px);
+      filter: blur(2px);
     }
 
-    .box {
-      background: #111827;
-      padding: 16px;
-      border-radius: 8px;
-      margin-top: 20px;
-      border: 1px solid #1f2937;
+    .overlay {
+      position: absolute;
+      top: 90px;
+      left: 10px;
+      background: rgba(17,24,39,0.85);
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      border: 1px solid #374151;
     }
   </style>
 </head>
 
 <body>
 
-  <header>
-    <h1>Nigeria Security Dashboard (Prototype)</h1>
-    <p>Developed by Adekanye Abdulzohir</p>
-  </header>
+<header>
+  <h1>Nigeria Security Dashboard (Prototype)</h1>
+  <p>Developed by Adekanye Abdulzohir</p>
+</header>
 
-  <main>
-    <div class="box">
-      <h3>System Status</h3>
-      <p>Map and intelligence feed will appear here.</p>
-      <p><em>Demo data only – real satellite access requires authorization.</em></p>
-    </div>
-  </main>
+<div id="map"></div>
+
+<div class="overlay">
+  🔒 Restricted View<br>
+  Satellite imagery blurred for demo
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  const map = L.map('map').setView([9.0820, 8.6753], 6); // Nigeria center
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18
+  }).addTo(map);
+
+  L.marker([9.0765, 7.3986])
+    .addTo(map)
+    .bindPopup('Area of Interest (Demo)');
+</script>
 
 </body>
 </html>

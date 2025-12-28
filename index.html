@@ -5,17 +5,17 @@
   <title>Nigeria Security Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <!-- Routing -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
 
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background-color: #0b0f14;
+      background: #0b0f14;
       color: white;
     }
 
@@ -39,18 +39,6 @@
 
     #map {
       height: calc(100vh - 80px);
-      filter: blur(2px);
-    }
-
-    .overlay {
-      position: absolute;
-      top: 90px;
-      left: 10px;
-      background: rgba(17,24,39,0.85);
-      padding: 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      border: 1px solid #374151;
     }
   </style>
 </head>
@@ -64,24 +52,30 @@
 
 <div id="map"></div>
 
-<div class="overlay">
-  🔒 Restricted View<br>
-  Satellite imagery blurred for demo
-</div>
-
-<!-- Leaflet JS -->
+<!-- Scripts -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
 <script>
-  const map = L.map('map').setView([9.0820, 8.6753], 6); // Nigeria center
+  // Initialize map (Abuja)
+  const map = L.map('map').setView([9.0765, 7.3986], 15);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18
+  // Satellite imagery (shows houses clearly)
+  L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {
+      attribution: 'Esri World Imagery'
+    }
+  ).addTo(map);
+
+  // Directions (routing)
+  L.Routing.control({
+    waypoints: [
+      L.latLng(9.0765, 7.3986), // Start
+      L.latLng(9.0820, 7.4200)  // Destination
+    ],
+    routeWhileDragging: true
   }).addTo(map);
-
-  L.marker([9.0765, 7.3986])
-    .addTo(map)
-    .bindPopup('Area of Interest (Demo)');
 </script>
 
 </body>

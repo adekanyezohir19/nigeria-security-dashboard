@@ -1,86 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Nigeria Security Risk Map (Satellite)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <meta charset="UTF-8">
+  <title>Nigeria Security Map</title>
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
   <style>
-    #map { height: 100vh; width: 100%; }
+    body { margin: 0; padding: 0; }
+    #map { height: 100vh; width: 100vw; }
+
+    .location-label {
+      background: rgba(0,0,0,0.65);
+      color: white;
+      border: none;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 2px 6px;
+    }
+
+    .popup-img {
+      width: 100%;
+      border-radius: 6px;
+      margin-bottom: 5px;
+    }
   </style>
 </head>
+
 <body>
 
 <div id="map"></div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-  // Nigeria bounds
-  const nigeriaBounds = [[4.3, 2.7], [13.9, 14.7]];
+  // 1️⃣ CREATE MAP (ZOOMED IN – NOT FAR)
+  const map = L.map('map').setView([9.0820, 8.6753], 7.5);
 
-  // Map init
-  const map = L.map('map', {
-    maxBounds: nigeriaBounds,
-    maxBoundsViscosity: 1.0
-  }).setView([9.0820, 8.6753], 6);
-
-  // SATELLITE tiles
+  // 2️⃣ SATELLITE LAYER (FREE – NO PAYMENT)
   L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    { attribution: 'Satellite © Esri' }
+    'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+    'World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 18 }
   ).addTo(map);
 
-  // Icons
+  // 3️⃣ ROAD + HOUSE OVERLAY (HYBRID LOOK)
+  L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { opacity: 0.35 }
+  ).addTo(map);
+
+  // 4️⃣ ICONS (BIG & CLEAR)
   const redIcon = new L.Icon({
     iconUrl: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-    iconSize: [32, 32]
+    iconSize: [42, 42],
+    iconAnchor: [21, 42]
   });
 
-  const orangeIcon = new L.Icon({
-    iconUrl: 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png',
-    iconSize: [32, 32]
-  });
-
-  // NEWS‑REPORTED HIGH‑RISK LOCATIONS (APPROXIMATE)
+  // 5️⃣ DANGEROUS LOCATIONS (NEWS‑REPORTED)
   const dangerZones = [
-    // Boko Haram / ISWAP
-    {name:"Maiduguri", state:"Borno", lat:11.8469, lng:13.1571, type:"Boko Haram"},
-    {name:"Gwoza", state:"Borno", lat:11.0833, lng:13.7000, type:"Boko Haram"},
-    {name:"Bama", state:"Borno", lat:11.5221, lng:13.6856, type:"Boko Haram"},
-    {name:"Damboa", state:"Borno", lat:11.1556, lng:12.7564, type:"Boko Haram"},
-    {name:"Chibok", state:"Borno", lat:10.8696, lng:13.0141, type:"Boko Haram"},
-    {name:"Mubi", state:"Adamawa", lat:10.2676, lng:13.2644, type:"Boko Haram"},
-    {name:"Madagali", state:"Adamawa", lat:10.8894, lng:13.6286, type:"Boko Haram"},
-    {name:"Michika", state:"Adamawa", lat:10.6206, lng:13.3894, type:"Boko Haram"},
-    {name:"Geidam", state:"Yobe", lat:12.8936, lng:11.9304, type:"Boko Haram"},
-    {name:"Damaturu", state:"Yobe", lat:11.7470, lng:11.9608, type:"Boko Haram"},
-
-    // Banditry
-    {name:"Birnin Gwari", state:"Kaduna", lat:10.6639, lng:6.5406, type:"Banditry"},
-    {name:"Giwa", state:"Kaduna", lat:11.3156, lng:7.4494, type:"Banditry"},
-    {name:"Kajuru", state:"Kaduna", lat:10.3220, lng:7.6846, type:"Banditry"},
-    {name:"Anka", state:"Zamfara", lat:12.1133, lng:5.9256, type:"Banditry"},
-    {name:"Maru", state:"Zamfara", lat:12.3344, lng:6.4031, type:"Banditry"},
-    {name:"Shinkafi", state:"Zamfara", lat:13.0731, lng:6.5050, type:"Banditry"},
-    {name:"Batsari", state:"Katsina", lat:12.7553, lng:7.2483, type:"Banditry"},
-    {name:"Faskari", state:"Katsina", lat:11.7217, lng:7.0311, type:"Banditry"},
-    {name:"Shiroro", state:"Niger", lat:9.9950, lng:6.8322, type:"Banditry"},
-    {name:"Munya", state:"Niger", lat:9.7356, lng:6.5147, type:"Banditry"}
+    {
+      name: "Maiduguri, Borno",
+      lat: 11.8469,
+      lng: 13.1571,
+      address: "Maiduguri LGA, Borno State",
+      threat: "Boko Haram (News Reports)",
+      source: "BBC / Reuters"
+    },
+    {
+      name: "Birnin Gwari, Kaduna",
+      lat: 10.6639,
+      lng: 6.5406,
+      address: "Birnin Gwari LGA, Kaduna State",
+      threat: "Banditry (News Reports)",
+      source: "Punch / Daily Trust"
+    },
+    {
+      name: "Gwoza, Borno",
+      lat: 11.0845,
+      lng: 13.6959,
+      address: "Gwoza LGA, Borno State",
+      threat: "Boko Haram (News Reports)",
+      source: "Premium Times"
+    }
   ];
 
-  // Add markers
+  // 6️⃣ ADD MARKERS
   dangerZones.forEach(z => {
-    const icon = z.type === "Boko Haram" ? redIcon : orangeIcon;
-
-    L.marker([z.lat, z.lng], {icon})
-      .addTo(map)
-      .bindPopup(`
-        <b>${z.name}, ${z.state}</b><br>
-        Threat: ${z.type}<br>
-        <small>High‑Risk Area (Public News Reports)</small>
-      `)
-      .bindTooltip(`${z.name}`, {permanent:true, direction:"top"});
-  });
-</script>
-
-</body>
-</html>

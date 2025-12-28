@@ -1,94 +1,124 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Nigeria Security Map</title>
+  <title>Nigeria Security Navigation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <!-- Routing -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
 
   <style>
-    body { margin: 0; padding: 0; }
-    #map { height: 100vh; width: 100vw; }
+    body { margin:0; }
+    #map { height:100vh; width:100vw; }
 
     .location-label {
-      background: rgba(0,0,0,0.65);
+      background: rgba(0,0,0,0.6);
       color: white;
-      border: none;
       font-size: 13px;
       font-weight: bold;
-      padding: 2px 6px;
-    }
-
-    .popup-img {
-      width: 100%;
-      border-radius: 6px;
-      margin-bottom: 5px;
+      border: none;
     }
   </style>
 </head>
 
 <body>
-
 <div id="map"></div>
 
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
 <script>
-  // 1️⃣ CREATE MAP (ZOOMED IN – NOT FAR)
-  const map = L.map('map').setView([9.0820, 8.6753], 7.5);
+  // 🔊 SPEAK FUNCTION
+  function speak(text) {
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = "en-US";
+    speechSynthesis.speak(msg);
+  }
 
-  // 2️⃣ SATELLITE LAYER (FREE – NO PAYMENT)
+  // 🗺 MAP
+  const map = L.map('map').setView([9.0820, 8.6753], 7);
+
+  // 🛰 SATELLITE
   L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/' +
-    'World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     { maxZoom: 18 }
   ).addTo(map);
 
-  // 3️⃣ ROAD + HOUSE OVERLAY (HYBRID LOOK)
+  // 🛣 ROADS OVERLAY
   L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     { opacity: 0.35 }
   ).addTo(map);
 
-  // 4️⃣ ICONS (BIG & CLEAR)
-  const redIcon = new L.Icon({
-    iconUrl: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-    iconSize: [42, 42],
-    iconAnchor: [21, 42]
-  });
+  let userMarker, userLatLng, routeControl;
 
-  // 5️⃣ DANGEROUS LOCATIONS (NEWS‑REPORTED)
-  const dangerZones = [
-    {
-      name: "Maiduguri, Borno",
-      lat: 11.8469,
-      lng: 13.1571,
-      address: "Maiduguri LGA, Borno State",
-      threat: "Boko Haram (News Reports)",
-      source: "BBC / Reuters"
-    },
-    {
-      name: "Birnin Gwari, Kaduna",
-      lat: 10.6639,
-      lng: 6.5406,
-      address: "Birnin Gwari LGA, Kaduna State",
-      threat: "Banditry (News Reports)",
-      source: "Punch / Daily Trust"
-    },
-    {
-      name: "Gwoza, Borno",
-      lat: 11.0845,
-      lng: 13.6959,
-      address: "Gwoza LGA, Borno State",
-      threat: "Boko Haram (News Reports)",
-      source: "Premium Times"
+  // 📍 GET USER LOCATION
+  navigator.geolocation.watchPosition(pos => {
+    userLatLng = [pos.coords.latitude, pos.coords.longitude];
+
+    if (!userMarker) {
+      userMarker = L.marker(userLatLng).addTo(map);
+      map.setView(userLatLng, 14);
+      speak("Your location has been detected");
+    } else {
+      userMarker.setLatLng(userLatLng);
     }
+  }, () => {
+    alert("Location access denied");
+  }, { enableHighAccuracy:true });
+
+  // 🔴 DANGEROUS LOCATIONS (EXAMPLE)
+  const dangerZones = [
+    { name:"Maiduguri, Borno", lat:11.8469, lng:13.1571 },
+    { name:"Birnin Gwari, Kaduna", lat:10.6639, lng:6.5406 }
   ];
 
-  // 6️⃣ ADD MARKERS
+  // 🚦 ADD MARKERS
   dangerZones.forEach(z => {
+    L.marker([z.lat, z.lng])
+      .addTo(map)
+      .bindTooltip(z.name, { permanent:true, direction:"top", className:"location-label" })
+      .on("click", () => startNavigation(z));
+  });
+
+  // 🧭 START NAVIGATION
+  function startNavigation(dest) {
+    if (!userLatLng) {
+      alert("Waiting for GPS...");
+      return;
+    }
+
+    if (routeControl) {
+      map.removeControl(routeControl);
+    }
+
+    speak("Navigation started to " + dest.name);
+
+    routeControl = L.Routing.control({
+      waypoints: [
+        L.latLng(userLatLng[0], userLatLng[1]),
+        L.latLng(dest.lat, dest.lng)
+      ],
+      routeWhileDragging: false,
+      show: false,
+      addWaypoints: false,
+      createMarker: () => null,
+      router: L.Routing.osrmv1({ language: 'en', profile: 'car' })
+    })
+    .on('routesfound', function(e) {
+      const steps = e.routes[0].instructions;
+
+      steps.forEach((step, i) => {
+        setTimeout(() => {
+          speak(step.text + ". Distance " + Math.round(step.distance) + " meters");
+        }, i * 4000);
+      });
+    })
+    .addTo(map);
+  }
+</script>
+</body>
+</html>

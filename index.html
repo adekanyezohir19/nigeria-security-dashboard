@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Free Military Map Prototype</title>
+  <title>Military Map Prototype - Nigeria</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
   <style>
     #map { height: 100vh; width: 100%; }
   </style>
@@ -12,70 +13,60 @@
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 <script>
-  const map = L.map('map').setView([9.0820, 8.6753], 6); // Center Nigeria
+  // Nigeria bounds
+  const nigeriaBounds = [[4.3, 2.7], [13.9, 14.7]]; // SW, NE lat,lng
 
-  // Add free satellite tiles (Esri)
+  // Initialize map centered on Nigeria
+  const map = L.map('map', {
+    maxBounds: nigeriaBounds,
+    maxBoundsViscosity: 1.0
+  }).setView([9.0820, 8.6753], 6);
+
+  // Satellite tiles
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles © Esri'
   }).addTo(map);
 
-  // Marker for your name
+  // Your name marker
   const myMarker = L.marker([9.0820, 8.6753]).addTo(map);
   myMarker.bindPopup("<b>Abdulzohir Adekanye</b><br>My location").openPopup();
+  myMarker.bindTooltip("Abdulzohir Adekanye", {permanent: true, direction: 'top', offset: [0, -10]});
 
-  // Simulated dangerous locations
-  const dangerLocations = [
+  // Simulated danger zones
+  const dangerZones = [
     {lat: 11.5, lng: 8.5, name: "Danger Zone 1"},
     {lat: 10.3, lng: 7.8, name: "Danger Zone 2"}
   ];
 
-  dangerLocations.forEach(loc => {
-    const marker = L.marker([loc.lat, loc.lng], {
+  dangerZones.forEach(zone => {
+    const marker = L.marker([zone.lat, zone.lng], {
       icon: L.icon({
         iconUrl: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
         iconSize: [32,32]
       })
     }).addTo(map);
+    marker.bindPopup(`<b>${zone.name}</b><br>Simulated danger area`);
+    marker.bindTooltip(zone.name, {permanent: true, direction: 'top', offset: [0, -10]});
 
-    marker.bindPopup(`<b>${loc.name}</b><br>Simulated danger area`);
-    marker.on('click', () => getDirections([loc.lat, loc.lng]));
+    marker.on('click', () => {
+      // Directions from your location to danger zone
+      L.Routing.control({
+        waypoints: [
+          L.latLng(9.0820, 8.6753), // your location
+          L.latLng(zone.lat, zone.lng)
+        ],
+        routeWhileDragging: false,
+        show: false
+      }).addTo(map);
+
+      // Speak directions
+      const text = `Routing from Abdulzohir Adekanye to ${zone.name}`;
+      const speech = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(speech);
+    });
   });
-
-  // Function to get directions using OpenRouteService
-  async function getDirections(destination) {
-    if (!navigator.geolocation) {
-      alert("Geolocation not supported by your browser");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(async position => {
-      const origin = [position.coords.longitude, position.coords.latitude];
-      const dest = [destination[1], destination[0]]; // lon, lat
-
-      // Your OpenRouteService API key
-      const apiKey = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjRkZGIzNDAyNTIyZTQ4MjU4ZTA3ODI1NTgyODljYWVjIiwiaCI6Im11cm11cjY0In0=";
-
-      const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${origin.join(',')}&end=${dest.join(',')}`;
-
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        const coords = data.features[0].geometry.coordinates.map(c => [c[1], c[0]]); // lat,lng
-        const route = L.polyline(coords, {color: 'blue'}).addTo(map);
-
-        // Speak directions
-        const steps = data.features[0].properties.segments[0].steps;
-        let text = steps.map(s => s.instruction).join('. ');
-        const speech = new SpeechSynthesisUtterance(text);
-        window.speechSynthesis.speak(speech);
-      } catch(err) {
-        alert("Error fetching directions: " + err.message);
-      }
-    }, err => alert(err.message));
-  }
 </script>
 </body>
 </html>
-<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />

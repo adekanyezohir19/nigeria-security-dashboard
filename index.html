@@ -1,96 +1,163 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Nigeria Military Navigation</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
-  <style>
-    #map { height: 100vh; width: 100%; }
-    .popup-img { width: 150px; height: 100px; object-fit: cover; display:block; margin-bottom:5px; }
-  </style>
+<meta charset="UTF-8">
+<title>Nigeria Navigation Map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
+
+<style>
+html, body { margin:0; height:100%; }
+#map { height:100%; width:100%; }
+
+.location-label {
+  background: rgba(0,0,0,0.7);
+  color: white;
+  font-size: 13px;
+  font-weight: bold;
+  border: none;
+  padding: 2px 6px;
+}
+</style>
 </head>
+
 <body>
 <div id="map"></div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
 <script>
-  // Nigeria bounds
-  const nigeriaBounds = [[4.3, 2.7], [13.9, 14.7]];
+/* 🔊 VOICE */
+function speak(text){
+  speechSynthesis.cancel();
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "en-US";
+  speechSynthesis.speak(msg);
+}
 
-  // Initialize map
-  const map = L.map('map', {
-    maxBounds: nigeriaBounds,
-    maxBoundsViscosity: 1.0
-  }).setView([9.0820, 8.6753], 6);
+/* 🇳🇬 NIGERIA ONLY */
+const nigeriaBounds = [
+  [4.0, 2.5],
+  [14.5, 14.8]
+];
 
-  // Satellite tiles
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles © Esri'
-  }).addTo(map);
+/* 🗺 MAP */
+const map = L.map('map',{
+  maxBounds: nigeriaBounds,
+  maxBoundsViscosity: 1.0,
+  minZoom: 6,
+  maxZoom: 18
+}).setView([9.0820, 8.6753], 7.5);
 
-  // Marker cluster group
-  const markers = L.markerClusterGroup();
+/* 🗺 NORMAL MAP */
+const normalMap = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { maxZoom:18 }
+).addTo(map);
 
-  // Your real-time location
-  let myMarker = L.marker([0,0]).addTo(map);
-  myMarker.bindPopup("You are here").openPopup();
+/* 🛰 SATELLITE */
+const satellite = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  { maxZoom:18 }
+);
 
-  // Function to update your location
-  function trackLocation() {
-    if(navigator.geolocation){
-      navigator.geolocation.watchPosition(position => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        myMarker.setLatLng([lat, lng]);
-        myMarker.bindPopup(`You are here: ${lat.toFixed(5)}, ${lng.toFixed(5)}`).openPopup();
-        map.setView([lat, lng], 14);
-        // Speak current location
-        const speech = new SpeechSynthesisUtterance(`You are at latitude ${lat.toFixed(5)}, longitude ${lng.toFixed(5)}`);
-        window.speechSynthesis.speak(speech);
-      });
-    } else {
-      alert("Geolocation not supported.");
-    }
-  }
-  trackLocation();
+/* 🛣 ROADS OVERLAY */
+const roads = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { opacity:0.35 }
+);
 
-  // Danger zones (sample 10, you can expand to 50)
-  const dangerZones = [
-    {lat:11.5, lng:8.5, name:"Danger Zone 1", address:"123 Abuja Road", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/House_in_Lagos%2C_Nigeria.jpg/320px-House_in_Lagos%2C_Nigeria.jpg"},
-    {lat:10.3, lng:7.8, name:"Danger Zone 2", address:"45 Kaduna Street", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Nigerian_house.jpg/320px-Nigerian_house.jpg"},
-    {lat:12.1, lng:8.0, name:"Danger Zone 3", address:"Maiduguri Street", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/House_in_Lagos%2C_Nigeria.jpg/320px-House_in_Lagos%2C_Nigeria.jpg"},
-    // Add more here up to 50
-  ];
+/* 🔀 LAYER SWITCH */
+L.control.layers(
+  { "Normal Map": normalMap, "Satellite": satellite },
+  { "Roads": roads }
+).addTo(map);
 
-  // Add danger zone markers
-  dangerZones.forEach(zone => {
-    const marker = L.marker([zone.lat, zone.lng], {icon:L.icon({iconUrl:'https://maps.google.com/mapfiles/ms/icons/red-dot.png',iconSize:[32,32]})});
-    marker.bindPopup(`<img src="${zone.img}" class="popup-img"><b>${zone.name}</b><br>Address: ${zone.address}`);
-    marker.bindTooltip(zone.name, {permanent:true,direction:'top', offset:[0,-10]});
-    marker.on('click', () => {
-      // Route from your current location to the selected danger zone
-      if(myMarker.getLatLng()){
-        L.Routing.control({
-          waypoints: [
-            L.latLng(myMarker.getLatLng().lat, myMarker.getLatLng().lng),
-            L.latLng(zone.lat, zone.lng)
-          ],
-          routeWhileDragging: true,
-          show: false
-        }).addTo(map);
+/* 📍 USER LOCATION */
+let userMarker = null;
+let userLatLng = null;
+let firstZoom = true;
 
-        const speech = new SpeechSynthesisUtterance(`Routing to ${zone.name}, ${zone.address}`);
-        window.speechSynthesis.speak(speech);
+navigator.geolocation.watchPosition(
+  pos=>{
+    userLatLng = [pos.coords.latitude, pos.coords.longitude];
+    if(!userMarker){
+      userMarker = L.marker(userLatLng).addTo(map)
+        .bindPopup("📍 You are here").openPopup();
+      if(firstZoom){
+        map.setView(userLatLng,15);
+        speak("Your location has been detected");
+        firstZoom = false;
       }
-    });
-    markers.addLayer(marker);
-  });
+    } else {
+      userMarker.setLatLng(userLatLng);
+    }
+  },
+  ()=>alert("Enable GPS"),
+  { enableHighAccuracy:true }
+);
 
-  map.addLayer(markers);
+/* 🔴 ICON */
+const redIcon = new L.Icon({
+  iconUrl:'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+  iconSize:[42,42],
+  iconAnchor:[21,42]
+});
+
+/* ⚠️ DANGER LOCATIONS (ADD MORE UP TO 50) */
+const dangerZones = [
+  {name:"Maiduguri, Borno", lat:11.8469, lng:13.1571},
+  {name:"Gwoza, Borno", lat:11.0845, lng:13.6959},
+  {name:"Birnin Gwari, Kaduna", lat:10.6639, lng:6.5406},
+  {name:"Anka, Zamfara", lat:11.9107, lng:5.9266}
+];
+
+/* 🧭 ROUTING */
+let routeControl = null;
+
+function startNavigation(dest){
+  if(!userLatLng){ alert("Waiting for GPS"); return; }
+  if(routeControl) map.removeControl(routeControl);
+
+  speak("Navigation started to " + dest.name);
+
+  routeControl = L.Routing.control({
+    waypoints:[
+      L.latLng(userLatLng[0], userLatLng[1]),
+      L.latLng(dest.lat, dest.lng)
+    ],
+    addWaypoints:false,
+    draggableWaypoints:false,
+    show:false,
+    createMarker:()=>null,
+    router: L.Routing.osrmv1({profile:'car', language:'en'})
+  })
+  .on('routesfound', e=>{
+    const steps = e.routes[0].instructions;
+    steps.forEach((s,i)=>{
+      setTimeout(()=>{
+        speak(s.text + ", " + Math.round(s.distance) + " meters");
+      }, i*4500);
+    });
+  })
+  .addTo(map);
+}
+
+/* 🚩 ADD MARKERS */
+dangerZones.forEach(z=>{
+  L.marker([z.lat,z.lng],{icon:redIcon})
+    .addTo(map)
+    .bindTooltip(z.name,{
+      permanent:true,
+      direction:"top",
+      className:"location-label"
+    })
+    .bindPopup("<b>"+z.name+"</b><br>High-risk area (news-reported)")
+    .on("click",()=>startNavigation(z));
+});
 </script>
 </body>
 </html>
